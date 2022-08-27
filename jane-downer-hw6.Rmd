@@ -1,0 +1,134 @@
+---
+title: CS422 - HW6
+author: Jane Downer
+toc_float: yes
+output:
+  html_notebook: null
+  toc: yes
+  '': default
+---
+  
+```{r}
+rm(list=ls())
+library(ggplot2)
+library(gganimate)
+library(geometry)
+```
+
+
+# Set working directory as needed
+
+```{r}
+setwd("/Users/user/Downloads")
+points <- read.csv("perceptron.csv", sep=",", header=T)
+```
+
+# The Perceptron function
+```{r}
+perceptron <- function(points, lamda, gamma) {
+# --- Your code goes below ---
+  x <- points[,2:4]
+  x <- as.matrix(x)
+  y <- points[,1]
+
+  avg_list <- c()
+  k <- 0
+  n <- nrow(x)
+  epoch <- 0
+  sum_error <- 0
+  weight_list <- c()
+  weights <- round(runif(3, min=-1, max=1),3)
+  bias <- c(weights[1])
+  w1 <- c(weights[2])
+  w2 <- c(weights[3])
+  
+  repeat{
+    sum_error <- 0
+    for(i in 1:n) {
+      x_vec <- c(as.numeric(x[i,1]), as.numeric(x[i,2]), as.numeric(x[i,3]))
+      y_hat <- my_sign(weights,x_vec)
+      error <- (y[i] - y_hat)
+      sum_error <- sum_error + abs(error)
+
+      for(j in 1:3){
+        weights[j] <- weights[j] + (lamda*error*x_vec[j])
+      }
+      k <- k+1
+    }
+    epoch <- epoch + 1
+    bias[[epoch+1]] <- weights[1]
+    w1[[epoch+1]] <- weights[2]
+    w2[[epoch+1]] <- weights[3]
+    avg_list[epoch] <- avg <- as.numeric(format(round(sum_error/n, digits = 3), nsmall = 2))
+    if (avg <= gamma) {
+      break
+    }
+  }
+  dx <<- data.frame("bias" = bias, "w1" = w1, "w2" = w2)
+  ret = list("weights" = weights, "epochs" = epoch, "error" = avg_list)
+  return(ret)
+}
+```
+
+# The sign function
+```{r}
+my_sign <- function(x, weights) {
+# --- Your code goes below ---
+  if (dot(x, weights) < 0) {
+    return(-1)
+  } else if (dot (x, weights) > 0) {
+    return(1)
+  } else {
+    return(0)
+  }
+}
+```
+
+# MAIN ENTRY POINT
+
+### Run perceptron function on input and return weights, epoch, and error
+```{r}
+val = perceptron(points, 1, 0.001)
+val
+```
+
+### Display plot of average error over epochs
+```{r}
+plot(1:val[[2]], val[[3]], type = "l", xlab = "Epoch", ylab = "Error", main = "Average Error per Epoch")
+```
+
+### Prepare data for animation and run animation function
+```{r}
+df1 <- subset(points, points$label == 1)
+df2 <- subset(points, points$label == -1)
+names(df2)[names(df2) == "x1"] <- "x1_"
+names(df2)[names(df2) == "x2"] <- "x2_"
+
+for (i in 1:nrow(dx)) {
+  dx$slope__[i] <- -dx[i,2]/dx[i,3]
+  dx$intercept__[i] <- -dx[i,1]/dx[i,3]
+  dx$count[i] = i
+}
+
+p_base <- ggplot(data=df1, aes(x1, x2, colour = "red")) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  geom_point(data=df2, aes(x1_, x2_, colour = "green"),
+             alpha = 0.7, show.legend = FALSE) +
+  geom_abline(aes(slope = slope__, intercept = intercept__), data = dx)
+
+p_base + transition_states(count, transition_length = 3, state_length = 0.001, wrap = F) +
+  labs(title = 'Epoch {closest_state}') +
+  ease_aes("linear")
+```
+
+### The final hyper-plane (for reference)
+```{r}
+d_final <- dx[nrow(dx),]
+p_final <- ggplot(data=df1, aes(x1, x2, colour = "red")) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  geom_point(data=df2, aes(x1_, x2_, colour = "green"),
+             alpha = 0.7, show.legend = FALSE) +
+  geom_abline(aes(slope = slope__, intercept = intercept__), data = d_final) +
+  labs(title = "Final Hyperplane")
+p_final
+```

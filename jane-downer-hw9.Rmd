@@ -1,0 +1,252 @@
+---
+title: "Jane-Downer-Homework9"
+author: "Jane Downer"
+date: "11/28/2020"
+output: html_document
+---
+
+```{r, include = FALSE}
+#install.packages("dbscan")
+#install.packages("readtext")
+#install.packages("factoextra")
+#install.packages("cluster")
+#install.packages("fpc")
+library(fpc)
+library(stringr)
+library(readtext)
+library(factoextra)
+library(cluster)
+library(data.table)
+library(dbscan)
+setwd("/Users/user/Desktop/CS_422")
+```
+
+### Part 2.1-a-i
+It is not immediately apparent that any attribute should be removed.
+
+### Part 2.1-a-ii
+The data does not need to be standardized. Every observation has the same unit (number of teeth) and there are no apparent outliers. All data is numeric.
+
+### Part 2.1-a-iii
+Cleaning the data:
+```{r}
+text_file = readtext("file19.txt")
+text_as_string = c(text_file[[2]][1])
+text_list = str_split(text_as_string[[1]],"\n")
+rows <- c()
+for (i in 22:87) {
+  rows <- append(rows, text_list[[1]][i])
+}
+data <- read.table(textConnection(rows))
+names(data) <- c("Name","I","i","C","c","P","p","M","m")
+data
+```
+### Part 2.1-b-i
+```{r}
+# Silhouette method
+df <- data[,2:9]
+fviz_nbclust(df, kmeans, method="silhouette")
+# WSS method too, for the heck of it
+fviz_nbclust(df, kmeans, method="wss")
+```
+
+Both the Silhouette and WSS methods suggest that the optimal number of clusters (k) is 8.
+
+### Part 2.1-b-ii
+```{r}
+k <- kmeans(df, centers=8) 
+fviz_cluster(k, data=df, main="Unscaled clusters")
+```
+### Part 2.1-b-iii
+```{r, include = FALSE}
+k$size
+```
+Cluster 1: 12 observations
+
+Cluster 2: 19 observations
+
+Cluster 3: 3  observations
+
+Cluster 4: 1  observations
+
+Cluster 5: 9  observations
+
+Cluster 6: 11 observations
+
+Cluster 7: 1  observations
+
+Cluster 8: 10 observations/n
+
+### Part 2.1-b-iv
+```{r}
+round(k$totss, digits = 3)
+```
+The total SSE is 568.303.
+
+### Part 2.1-b-v
+```{r, echo = FALSE}
+round(k$withinss, digits = 3)
+```
+Cluster 1 SSE: 8.833
+
+Cluster 2 SSE: 23.474
+
+Cluster 3 SSE: 1.333
+
+Cluster 4 SSE: 0.000
+
+Cluster 5 SSE: 1.556
+
+Cluster 6 SSE: 13.273
+
+Cluster 7 SSE: 0.000
+
+Cluster 8 SSE: 22.800
+
+```{r}
+k1 <- which(k$cluster == 1)
+k2 <- which(k$cluster == 2)
+k3 <- which(k$cluster == 3)
+k4 <- which(k$cluster == 4)
+k5 <- which(k$cluster == 5)
+k6 <- which(k$cluster == 6)
+k7 <- which(k$cluster == 7)
+k8 <- which(k$cluster == 8)
+
+mammals_1 <- c()
+for (k in k1) {
+  mammals_1 <- append(mammals_1, toString(data[k,1]))
+}
+mammals_2 <- c()
+for (k in k2) {
+  mammals_2 <- append(mammals_2, toString(data[k,1]))
+}
+mammals_3 <- c()
+for (k in k3) {
+  mammals_3 <- append(mammals_3, toString(data[k,1]))
+}
+mammals_4 <- c()
+for (k in k4) {
+  mammals_4 <- append(mammals_4, toString(data[k,1]))
+}
+mammals_5 <- c()
+for (k in k5) {
+  mammals_5 <- append(mammals_5, toString(data[k,1]))
+}
+mammals_6 <- c()
+for (k in k6) {
+  mammals_6 <- append(mammals_6, toString(data[k,1]))
+}
+mammals_7 <- c()
+for (k in k7) {
+  mammals_7 <- append(mammals_7, toString(data[k,1]))
+}
+mammals_8 <- c()
+for (k in k8) {
+  mammals_8 <- append(mammals_8, toString(data[k,1]))
+}
+cat(mammals_1, "\n", mammals_2, "\n", mammals_3, "\n", mammals_4, "\n", mammals_5, "\n", mammals_6, "\n", mammals_7, "\n", mammals_8)
+```
+
+Cluster 1 includes several mammals in the Mustelidae family: weasels, minks, ferrets, badgers, skunks, river otters and sea otters. Four of its other members are in the Felidae family: jaguars, lynx, ocelots, and courgars. The remaining mammal, the grey seal, is techincally a Pinniped, but among its closest relatives are the Mustelidae family (the first family mentioned).
+
+Cluster 2 includes several mammals in the Sciuridae family, which includes squirrels, chipmunks, marmots, groundhogs, prairie dogs, and beavers. It also includes several rodents (which include, among others, varieties of mice, rats, porcupines, and guinea pigs), as well as the pika and the snowshoe rabbit, which are close relatives.
+
+Cluster 3 includes the fur seal, sea lion, and elephant seal. While these are all related, it is surprising that they were classified into a cluster separate from the seals and otters in Cluster 1.
+
+Cluster 4 consists only of the walrus. On one hand, the fact that it is classified into its own cluster makes it seem like it doesn't fit into the larger group. On the other hand, I woudl have expected it to be grouped with other aquatic animals.
+
+Cluster 5 includes animals with antlers and horns.
+
+Cluster 6 is one of the more diverse clusters, including mustidea, bears, wovles, raccoons, the Civet cat, and moles.
+
+Cluster 7 consists only of the Armadillo.
+
+Cluster 8 consists of a variety of bats, in addition to the pig-like peccary and the opossum.
+
+While animals within each cluster are not unrelated, there are several animals that I would classify together, but that are split up among multiple clusters.
+
+Source: https://dcpaleo.org/mammal-orders-and-famliies/
+
+
+### 2.2-a
+
+```{r}
+s1 <- read.csv('s1.csv')
+head(s1)
+```
+
+```{r}
+cat(paste0("Minimum y value: ", min(s1$y), "\n"))
+cat(paste0("Maximum y value: ", max(s1$y), "\n"))
+cat(paste0("Minimum x value: ", min(s1$x), "\n"))
+cat(paste0("Maximum x value: ", max(s1$x)))
+```
+
+A quick look at the data shows that both x and y values fall within 19,000 and 1,000,000. The units are not given. Based on these similar ranges of data and the uniform lack of units, there does not appear to be any reason to standardize the data.
+
+
+### 2.2-b-i
+```{r}
+plot(s1, main = "S1 Dataset")
+```
+
+### 2.2-b-ii
+There appear to be 15 natural clusters. There is occasional overlap between the groups that I define as clusters, but it is still relatively easy to distinguish between them.
+
+### 2.2-c-i
+```{r}
+fviz_nbclust(s1, kmeans, method="wss",k.max = 20)
+```
+
+### 2.2-c-ii
+```{r}
+fviz_nbclust(s1, kmeans, method="silhouette",k.max = 20)
+```
+
+### 2.2-c-iii
+The wss method's scree plot does not indicate an obvious choice for an optimal number of clusters. The silhouette method's scree method suggests that, when considering clusters between 0 and 20, the optimal number is 19. Note that this is different from the number that I perceived to be present.
+
+### 2.2-d-i
+```{r}
+k <- kmeans(s1, centers=19) 
+fviz_cluster(k, data=s1, main="19 Clusters (unscaled)")
+```
+
+### 2.2-d-ii
+K-Means has clustered the data differently than I would have originally guessed. There are several groups of points that I would define as individual clusters, but which were defined as multiple clusters by K-Means. I would not consider this result to be ideal.
+
+### 2.2-e-i
+There are two dimensions to this data -- x and y. Given the rule of thumb presented in class (multiplying the number of parameters by 2), I think a reasonable value of MinPts is 4.
+
+### 2.2-e-ii
+```{r}
+dbscan::kNNdistplot(s1, k = 4)
+abline(h = 22000, lty = 2)
+abline(h = 14000, lty = 2)
+title('Choosing eps')
+```
+
+The optimal value of eps seems to be between about 14000 and 22000. We will try several values below to see which is best.
+
+```{r}
+db <- fpc::dbscan(s1, eps = 14000, MinPts = 4)
+plot(db, s1, main = "DBSCAN: eps = 14000", frame = FALSE)
+
+db <- fpc::dbscan(s1, eps = 16000, MinPts = 4)
+plot(db, s1, main = "DBSCAN: eps = 16000", frame = FALSE)
+
+db <- fpc::dbscan(s1, eps = 18000, MinPts = 4)
+plot(db, s1, main = "DBSCAN: eps = 18000", frame = FALSE)
+
+db <- fpc::dbscan(s1, eps = 20000, MinPts = 4)
+plot(db, s1, main = "DBSCAN: eps = 20000", frame = FALSE)
+
+db <- fpc::dbscan(s1, eps = 22000, MinPts = 4)
+plot(db, s1, main = "DBSCAN: eps = 22000", frame = FALSE)
+
+```
+
+Of the above options, eps = 22000 produces the best results.
+
+At minPts = 4, eps = 22000, there are 8 clusters.

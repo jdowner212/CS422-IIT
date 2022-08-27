@@ -1,0 +1,238 @@
+---
+title: "Jane-Downer-Homework10"
+author: "Jane Downer"
+date: "12/12/2020"
+output: html_document
+---
+
+```{r}
+#install.packages("lsa")
+library(lsa)
+rm(list=ls())
+setwd("/Users/user/Desktop/CS_422/HW10")
+```
+
+### Part 2.1-a-i
+```{r}
+countries_csv <- read.csv('countries.csv')
+countries <- data.frame(countries_csv[,-1], row.names = countries_csv[,1])
+countries_scaled = scale(countries)
+
+# Summary of unscaled data
+summary(countries)
+```
+
+
+
+### Part 2.1-a-ii
+I've included two boxplots here: one unscaled, and one scaled (which the instructions do not ask for but which I found is much more helpful.)
+```{r}
+boxplot(countries,  cex.axis=0.7, main = "Summary of Attributes (Unscaled)", cex.main = 1)
+boxplot(countries_scaled,  cex.axis=0.7, main = "Summary of Attributes (Scaled)", cex.main = 1)
+```
+
+The two outliers in the population category represent India and China, which are by far the most populous countries represented in the data.
+
+### Part 2.1-b
+```{r}
+#e <- eigen(cov(countries_scaled))
+#row.names(e$vectors) <- c("GDP", "HIV", "Lifeexp", "Mil", "Oilcons", "Pop", "Tel","Unempl")
+#colnames(e$vectors) <- c("PC1", "PC2", "PC3", "PC4", "PC5", "PC6", "PC7", "PC8")
+#e
+
+#phi <- -e$vectors
+#phi
+
+#phi.1 <- as.matrix(phi[,1])
+#PC1.score <- apply(X, 1, function(x) t(phi.1) %*% x)
+#as.matrix(head(PC1.score))
+
+#phi.2 <- as.matrix(phi[,2])
+#PC2.score <- apply(X, 1, function(x) t(phi.2) %*% x)
+#as.matrix(head(PC2.score))
+
+pca <- prcomp(countries_scaled)
+```
+
+### Part 2.1-c-i
+```{r}
+summary(pca)
+
+```
+
+4 components explain at least 90% of the data.
+
+
+
+
+### Part 2.1-c-ii
+```{r}
+screeplot(pca, type = 'l', main = "Proportion of variance in model")
+```
+
+### Part 2.1-c-iii
+The "elbow" of the screeplot suggests that we should select two components for modeling if we were to engage in a feature reduction task.
+
+### Part 2.1-d
+```{r}
+#pca$rotation <- -pca$rotation
+#pca$rotation
+pca
+```
+
+### Part 2.1-d-i
+PC1 is positively correlated with GDP, Lifeexp, Oilcons, and Tel. It is negatively correlated with HIV, Mil, Pop, and Unempl. This suggests that smaller first-world countries explain much of the variance in the data.
+
+### Part 2.1-d-ii
+PC2 is positively correlated with GDP, Lifeexp, Mil, Oilcons, Pop, and Tel. It is negatively correlated with HIV and Unempl. This suggests that larger, wealthier countries contribute the second-largest component of variance to the dataset.
+
+```{r}
+pca <- prcomp(countries_scaled)
+biplot(pca, scale=0)
+```
+
+
+```{r}
+pca$x[c(1,9,14),c(1,2)]
+```
+
+Brazil has negative values for both PC1 and PC2, suggesting the country has higher rates of HIV and unemployment, and below-average levels of wellness measures like GDP and life-expectancy.
+
+Japan has a positive value for PC1 and a slightly negative value for PC2. This suggests higher values for attributes positively associated with PC1, including GDP, Lifeexp, Oilcons, and Tel. The slightly negative value for PC2 suggests either slightly above average rates of HIV and unemployment (which PC2 is negatively correlated with and heavily influenced by) or slightly above average levels of population and military spending (which PC2 is positively correlated with and heavily influenced by).
+
+The UK has positive values for both PC1 and PC2. It certainly belongs in PC1, which is comprised of first-world countries. Again, the opposing effects of HIV/unemployment and Pop/Mil on PC2 make it difficult to assess whether its slightly positive score is due to high population, high military spending, or low HIV levels and low levels of unemployment. I would guess the latter.
+
+Overall, based on my knowledge of these countries, these categorizations make sense.
+
+
+### Part 2.2
+```{r}
+#pca$rotation <- -pca$rotation
+biplot(pca, scale=0)
+```
+
+
+### Part 2.2
+```{r}
+ratings <- read.csv('ratings.csv')
+head(ratings)
+
+movies <- read.csv('movies.csv')
+head(movies)
+
+genres <-  1:20
+names(genres) <- c("Action", "Adventure", "Animation", "Children", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+"Film-Noir", "Horror", "IMAX", "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western", "(no genres listed)")
+```
+
+
+```{r}
+# get user profile matrix
+user_profile <- function(A_number) {
+  user_ID <- A_number%%671
+  user_subset <- subset(ratings, userId == user_ID)
+  # get number of movies watched to create dimensions of dataset
+  movies_watched <- unique(user_subset$movieId)
+  # create empty user profile to fill out
+  rows = length(movies_watched)
+  empty_profile <- data.frame(matrix(NA, nrow = rows, ncol = 20), row.names = movies_watched)
+  names(empty_profile) <- names(genres)
+  # find information about movies watched
+  count = 1
+  for (mid in movies_watched) {
+    genre_entry = subset(movies, movieId == mid)$genres
+    for(g in names(genres)) {
+      genre_idx <- genres[[g]]
+      if (grepl(tolower(g), tolower(genre_entry), fixed = TRUE)) {
+        empty_profile[count, genre_idx] <- 1
+      } else {
+        empty_profile[count, genre_idx] <- 0
+      }
+      #genres_in_movie <- unique(genres_in_movie)
+    }
+    count = count + 1
+  }
+  return(empty_profile)
+}
+
+# Get user profile vector
+user_profile_vector <- function(profile_df) {
+  vector_values <- unname(colMeans(profile_df))
+  return(vector_values)
+}
+```
+
+
+```{r}
+# get movie profile vector
+movie_profile <- function(movie_id) {
+  genre_entry = subset(movies, movieId == movie_id)$genres
+  genre_vector <- c()
+  for(g in names(genres)) {
+    genre_idx <- genres[[g]]
+    if (grepl(tolower(g), tolower(genre_entry), fixed = TRUE)) {
+      genre_vector <- append(genre_vector, 1)
+    } else {
+      genre_vector <- append(genre_vector, 0)
+    }
+  }
+  return(genre_vector)
+}
+```
+
+
+```{r}
+my_profile <- user_profile(20452471)
+my_vector <- user_profile_vector(my_profile)
+```
+
+
+```{r}
+top_five_from_ten <- function(user_ID, movie_sample) {
+  ID <- user_ID%%671
+  my_profile <- user_profile(ID)
+  my_vector <- user_profile_vector(my_profile)
+
+  movie_profiles <- c()
+  list_idx <- 0
+  for (m in movie_sample) {
+    profile <- movie_profile(m)
+    movie_profiles <- append(movie_profiles, list(profile))
+  }
+  mid_list <- c()
+  name_list <- c()
+  similarity_list <- c()
+  for (i in 1:length(movie_sample)) {
+    mid_list <- append(mid_list, movie_sample[i])
+    name_list <- append(name_list, as.character(movies$title[movies$movieId == movie_sample[i]]))
+    similarity_list <- append(similarity_list, as.numeric(cosine(movie_profiles[[i]], my_vector)))
+  }
+  
+  indices <- sort(similarity_list, index.return=TRUE, decreasing=TRUE)[[2]][1:5]
+  top_5_mid <- c()
+  top_5_names <- c()
+  top_5_similarity <- c()
+  for (i in indices) {
+    top_5_mid <- append(top_5_mid, mid_list[i])
+    top_5_names <- append(top_5_names, name_list[i])
+    top_5_similarity <- append(top_5_similarity, similarity_list[i])
+  }
+  column_names <- c("MovieId", "MovieName", "Similarity")
+  recs <- data.frame(top_5_mid, top_5_names, top_5_similarity)
+  names(recs) <- column_names
+
+  cat(paste0("User ID ", user_ID, " chose the following 10 movies: ", movie_sample[1], ", ", movie_sample[2], ", ",
+             movie_sample[3], ", ", movie_sample[4], ", ", movie_sample[5], ", ",movie_sample[6], ", ",
+             movie_sample[7], ", ", movie_sample[8], ", ", movie_sample[9], ", ",movie_sample[10],
+             ". Of these, the following 5 movies are recommended: "))
+  return(recs)
+}
+```
+
+```{r}
+unique_movies <- movies$movieId
+movie_sample <- sample(unique_movies, 10)
+user_ID <- 20452471
+top_five_from_ten(user_ID, movie_sample)
+```
+

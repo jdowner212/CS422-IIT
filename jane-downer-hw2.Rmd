@@ -1,0 +1,205 @@
+---
+title: "CS 422 HW2"
+author: "Jane Downer"
+output:
+  html_document:
+    toc: yes
+    df_print: paged
+  html_notebook:
+    toc: yes
+    toc_float: yes
+---
+
+### Part 2 (James page 121, question 8)
+
+### Part 2.1-A
+```{r}
+#install.packages("ISLR")
+#install.packages("dplyr")
+#library(dplyr)
+#library(ISLR)
+#setwd("~/Desktop")
+
+# Identify the data
+data(Auto)
+auto <- data.frame(Auto)
+
+# Create regression model
+lm.fit <- lm(mpg ~ horsepower, data = auto)
+summary(lm.fit)
+```
+### Part 2.1-A-i
+
+```{r}
+cat("i. The p-value is very low - this implies that there is, in fact, a relationship between the predictor and the response.")
+```
+
+### Part 2.1-A-ii
+```{r}
+cat("ii. The adjusted R-squared value is approximately 0.6049, suggesting that about 60% of the variance in the response variable can be explained by the predictor variable.")
+```
+
+### Part 2.1-A-iii
+```{r}
+cat("iii. The coefficient is negative -- therefore, the relationship is also negative.")
+```
+
+### Part 2.1-A-iv
+```{r}
+prediction <- predict(lm.fit, data.frame("horsepower" = 98))
+cat(paste0("The predicted mpg is ", format(round(prediction, 2), nsmall = 2)
+,"."),"\n\n\n")
+cat("95% confidence interval:\n\n")
+predict(lm.fit, data.frame("horsepower" = 95), interval="confidence")
+cat("\n\n98% prediction interval:\n\n")
+predict(lm.fit, data.frame("horsepower" = 98), interval="prediction")
+```
+### Part 2.1-B
+```{r}
+plot(auto$horsepower, auto$mpg, xlab = "Horsepower", ylab = "MPG", main = "Horsepower vs. MPG")
+abline(lm.fit, lw = 2, col = "blue")
+```
+### Part 2.1-C
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit)
+
+cat("The \"Normal Q-Q\" plot shows that the residuals follow a relatively normal distribution. The \"Residuals vs Fitted\" and \"Scale-Location\" plots exhibit non-linear patterns, suggesting the least-squares regression fit is not ideal.")
+```
+
+### Part 2.2-A-i
+```{r}
+# Part 2.2 general setup:
+set.seed(1122)
+index <- sample(1:nrow(Auto), 0.95*dim(Auto)[1])
+train.df <- Auto[index,]
+test.df <- Auto[-index,]
+
+# Regression model:
+lm.fit1 <- lm(mpg ~ . - name, data = train.df)
+
+cat("i. It is not reasonable to use \"name\" as a predictor because the name of a car should not affect its miles per gallon.")
+```
+
+### Part 2.2-A-ii
+```{r}
+summary(lm.fit1)
+MSE <- mean(residuals(lm.fit1)^2)
+RMSE <- sqrt(MSE)
+cat("RMSE:", RMSE,"\n\n")
+cat("ii.\nThe adjusted R-squared value is about 0.8135, suggesting that about 81.35% of the response values (mpg) can be explained by the predictor variables.\n\nThe residual standard error (RSE) shows that, on average, each observation differs from the predicted value by 3.367 units.\n\nThe RMSE is about 3.33, indicating that the standard deviation of the unexplained variance is 3.33 units.")
+```
+
+### Part 2.2-A-iii
+```{r}
+plot(lm.fit1, 1)
+```
+
+### Part 2.2-A-iv
+```{r}
+hist(lm.fit1$residuals, xlab = "Residuals", ylab = "Frequency", main = "Histogram of Residuals")
+
+cat("iv.\n
+Residual plot interpretation: The residuals seem to be somewhat heteroscedastic, since the variance of the  residuals seems to increase with larger fitted values. However, the data is still somewhat centered around 0. There is a slight curvature in the pattern of the residuals, suggesting that there may be some non-linearity in the data.
+    
+Histogram interpretation: The histogram of the residuals follows a Gaussian distribution.")
+```
+
+### Part 2.2-B-i
+```{r}
+cat("i. The summary of the model generated in part A shows that the three most significant predictors (smallest p-values) are origin, weight, and year. All three have p-values below 0.05. (Displacement's p-value is also below 0.05, but it is not as small as the other three.")
+
+# Modified data:
+train2.df <- train.df[c("mpg","weight","year","origin")]
+test2.df <- test.df[c("mpg","weight","year","origin")]
+```
+
+### Part 2.2-B-ii
+```{r}
+lm.fit2 = lm(mpg ~., data = train2.df)
+
+summary(lm.fit2)
+MSE2 <- mean(residuals(lm.fit2)^2)
+RMSE2 <- sqrt(MSE2)
+cat("RMSE:", RMSE2,"\n\n")
+
+cat("ii.\nThe adjusted R-squared value is about 0.811, suggesting that about 81.1% of the response values (mpg) can be explained by the predictor variables.\n\nThe residual standard error (RSE) shows that, on average, each observation differs from the predicted value by 3.389 units.\n\nThe RMSE is about 3.37, indicating that the standard deviation of the unexplained variance is about 3.37 units.")
+```
+
+### Part 2.2-B-iii
+```{r}
+plot(lm.fit2, 1)
+```
+
+
+### Part 2.2-B-iv
+```{r}
+hist(lm.fit2$residuals, xlab = "Residuals", ylab = "Frequency", main = "Histogram of Residuals")
+
+cat("iv. The histogram follows a Gaussian distribution. The plot of residuals above looks similar to the one in part (a) -- slightly heteroscedastic (greater residual variance at larger fitted values) and mildly curved, suggesting some non-linearity.")
+```
+
+### Part 2.2-B-v
+```{r}
+cat("v. At first glance, the histograms and residuals plots from parts (a) and (b) resemble each other. However, from the histogram in part 2.2-B-iv, we see that number of residuals close to zero has increased. This suggests that the explanatory power of the regression model was improved by eliminating all but the 3 strongest predictors.")
+```
+
+
+### Part 2.2-C
+```{r}
+p <- predict(lm.fit2, test2.df)
+actuals_preds <- data.frame(cbind(predicted_mpg=p, actual_mpg=test2.df$mpg))
+actuals_preds_CI <- actuals_preds_PI <- actuals_preds
+cat("Fitted test data:")
+actuals_preds_CI
+```
+
+### Part 2.2-D
+```{r}
+# add columns for upper and lower bounds of confidence interval
+CI_bounds <- data.frame(predict(lm.fit2, test2.df, interval = "confidence"))
+actuals_preds_CI[,c("lower","upper")] <- CI_bounds[,c("lwr","upr")]
+
+# create "match" function
+match_CI <- function(x)
+{
+  if((x['lower']<x['actual_mpg']) & (x['actual_mpg']<x['upper']))
+    return(1)
+  return(0)
+}
+
+# results
+actuals_preds_CI$Matches <- apply(actuals_preds_CI, 1, match_CI)
+
+cat("Confidence Interval Matches:")
+actuals_preds_CI
+
+count <- sum(actuals_preds_CI$Matches)
+cat(paste0("Total observations correctly predicted: ", count, "."))
+```
+
+### Part 2.2-E
+```{r}
+# add columns for upper and lower bounds of confidence interval
+PI_bounds <- data.frame(predict(lm.fit2, test2.df, interval = "prediction"))
+actuals_preds_PI[,c("lower","upper")] <- PI_bounds[,c("lwr","upr")]
+
+# create "match" function
+match_PI <- function(x)
+{
+  if((x['lower']<x['actual_mpg']) & (x['actual_mpg']<x['upper']))
+    return(1)
+  return(0)
+}
+
+actuals_preds_PI$Matches <- apply(actuals_preds_PI, 1, match_PI)
+cat("Prediction Interval Matches:")
+actuals_preds_PI
+count <- sum(actuals_preds_PI$Matches)
+cat(paste0("Total observations correctly predicted: ", count, "."))
+```
+
+### Part 2.2-F
+```{r}
+cat("The prediction interval results in 20 matches, while the confidence interval results in 7 matches. This makes sense. Confidence intervals suggest the likelihood that a population parameter will be captured by a given interval. Prediction intervals, on the other hand, suggest the likelihood that a single observation will be captured by a given interval. It is much easier to predict a population parameter from multiple sample observations than it is to predict the value of a single observation -- there is much more variance in the latter. Therefore, prediction intervals are larger than confidence intervals to account for greater variance between individual observations. With this knowledge, it is easy to see that an individual observation would more likely be captured by the prediction interval than by the smaller confidence interval.")
+```

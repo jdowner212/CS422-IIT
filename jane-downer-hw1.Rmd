@@ -1,0 +1,153 @@
+---
+title: "CS 422 HW1"
+author: "Jane Downer"
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+  html_document:
+    toc: yes
+    df_print: paged
+---
+
+### Part 2.1-A
+```{r}
+setwd("~/Desktop")
+library(dplyr)
+collegeData <- read.csv(file = 'College.csv', row.names = 1)
+collegeData[c(1:5),c(1,5,8,10)]
+```
+### Part 2.1-B
+
+```{r}
+private <- nrow(collegeData %>% filter(Private == "Yes"))
+public <- nrow(collegeData %>% filter(Private == "No"))
+noquote(sprintf("There are %d private colleges, and %d public colleges in the dataset.", private, public))
+```
+
+### Part 2.1-C
+```{r}
+newDF <- collegeData[,c("Private", "Apps", "Accept", "Enroll",
+                        "PhD", "perc.alumni", "S.F.Ratio",
+                        "Grad.Rate")]
+head(newDF,6)
+```
+
+### Part 2.1-D-i
+```{r}
+library(ggplot2)
+p <- newDF %>% filter(Private == "Yes") %>%
+  ggplot(aes(PhD, fill = cut(PhD, 3000))) + 
+  geom_histogram(binwidth = 5, show.legend = F) + 
+  ggtitle("Percent of Faculty with PhDs: Private Colleges") + 
+  xlab("Percent of Faculty") +
+  ylab("Count") +
+  scale_fill_discrete(h = c(350,250)) +
+  theme_bw() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5))
+p
+
+```
+### Part 2.1-D-ii
+```{r}
+p <- newDF %>% filter(Private == "No") %>%
+  ggplot(aes(PhD, fill = cut(PhD, 3000))) + 
+  geom_histogram(binwidth = 5, show.legend = F) + 
+  ggtitle("Percent of Faculty with PhDs: Public Colleges") + 
+  xlab("Percent of Faculty") +
+  ylab("Count") +
+  scale_fill_discrete(h = c(200,100)) +
+  theme_bw() + 
+  theme(plot.title = element_text(size = 15, hjust = 0.5))
+p
+
+```
+
+### Part 2.1-D-iii (extra credit)
+```{r}
+print("See parts i and ii.", quote = F)
+```
+
+
+### Part 2.1-E-i
+```{r}
+# Top 5 colleges with minimum graduation rates
+select(head(newDF[order(newDF$Grad.Rate),],5),Grad.Rate)
+```
+
+### Part 2.1-E-ii
+```{r}
+# Top 5 colleges with maximum graduation rates
+select(tail(newDF[order(newDF$Grad.Rate),],5),Grad.Rate)
+```
+
+### Part 2.1-F
+```{r}
+#install.packages("psych")
+```
+
+### Part 2.1-F-i
+```{r}
+library(psych)
+pairs.panels(newDF[,c("PhD","S.F.Ratio","Grad.Rate")])
+```
+
+### Part 2.1-F-ii
+```{r}
+print("'PhD'(percentage of faculty with PhDs) and 'Grad.Rate' (Graduation Rate) are positively correlated. This makes sense, because academically driven students and faculty are likely drawn to the same institutions.", quote = F)
+```
+
+### Part 2.1-F-iii
+```{r}
+print("'S.F.Ratio' (student-to-faculty ratio) and 'Grad.Rate' (Graduation Rate) are negatively correlated. This makes sense. A higher S.F.Ratio implies that there are fewer resources available to students, which could explain lower graduation rates.", quote = F)
+```
+
+### Part 2.1-G
+```{r}
+dataPrivate <- collegeData %>% filter(Private == "Yes")
+dataPublic <- collegeData %>% filter(Private == "No")
+
+boxplot(dataPrivate$perc.alumni, dataPublic$perc.alumni,
+        main = "Percentage of Alumni Who Donate: Public versus Private Colleges",
+        ylab = "Percentage of Alumni who Donate",
+        names = c("Private", "Public"),
+        cex.main = 0.9, cex.lab = 0.7, cex.axis = 0.7,
+        col = c(rgb(0.9,0.8,0.95)), lwd = 1)
+
+print("Based on the boxplots above, the highest donors tend to be alumni of private colleges.", quote = F)
+```
+
+### Part 2.1-H
+```{r}
+cdfCollege <- ecdf(collegeData$Expend)
+```
+
+### Part 2.1-H-iii:
+```{r}
+p_color = c(rgb(0.9,0.8,0.95))
+
+plot(cdfCollege, verticals = T, do.points = F, col = p_color, lwd=3,
+     main = "Instructional Expenditure", cex.main = 0.9,
+     xlab ="Expenditure per Student (in dollars)", cex.lab = 0.7,
+     ylab = "Cumulative Density",
+     xaxs = "i", yaxs = "i", xlim  = c(0,35000), ylim = c(0,1), xaxt = 'n', cex.axis = 0.7)
+
+box(col = "white")
+grid(14,10)
+
+axis(xaxs = "i", side=1,tck=-0.02,at=c(seq(from=0,to=35000,by=2500)), labels = F)
+text(seq(1, 35001, by=2500), par("usr")[3] - 0.2,
+     labels = c(seq(from=0,to=35000,by=2500)), srt = 45, pos = 3, offset = 1,
+     xpd = TRUE, cex =0.7)
+```
+### Part 2.1-H-i:
+```{r}
+fifty = quantile(collegeData$Expend, probs = 0.5)
+noquote(sprintf("The gridlines in the above CDF plot place the median expenditure between $7500 and $10,000 per student -- roughly $8500. Upon performing the actual calculation, we find that the true value is $%0.f, which is not far off from the estimate.", fifty))
+```
+
+### Part 2.1-H-ii
+```{r}
+eighty = quantile(collegeData$Expend, probs = 0.8)
+noquote(sprintf("The gridlines in the above CDF plot suggest that 80%% of students pay below a value that is betwen $10,000 and $12,500 -- about $11,500. Upon performing the actual calculation, we find that the true value is $%0.f, which is not far off from the estimate.", eighty))
+```

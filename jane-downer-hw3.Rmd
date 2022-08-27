@@ -1,0 +1,25 @@
+---
+title: CS422 - HW2
+author: Jane Downer
+date: 9/28/2020
+output: html_document
+---
+
+### Part 1.1
+```{r}
+setwd("~/Desktop")
+train.df <- iris
+library(rpart)
+library(rpart.plot)
+
+mytree <- rpart(
+  Species ~.,
+  data = train.df,
+method = "class"
+)
+# Text representation
+mytree
+
+# Plot representation
+rpart.plot(mytree, extra = 104, fallen.leaves = T, type = 4, main = "Iris Dataset Decision Tree")
+```

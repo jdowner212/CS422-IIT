@@ -1,0 +1,152 @@
+---
+title: "Homework 8"
+output: html_document
+html_notebook:
+toc: yes
+toc_float: yes
+author: Jane Downer
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include = F}
+library(dplyr)
+knitr::opts_knit$set(root.dir = "/Users/user/Desktop/CS_422/HW8")
+#install.packages("arules")
+#install.packages("arulesViz")
+library(arules)
+library(arulesViz)
+#install.packages("lemon")
+library(lemon)
+#knit_print.data.frame <- lemon_print
+rm(list=ls())
+```
+
+### Part 2.1-A
+Completed in Python (files attached).
+
+### Part 2.1-B
+```{r, include=F}
+trans1 <- read.transactions("tr-1k-canonical.csv", sep=",")
+trans5 <- read.transactions("tr-5k-canonical.csv",  sep=",")
+trans20 <- read.transactions("tr-20k-canonical.csv", sep=",")
+trans75 <- read.transactions("tr-75k-canonical.csv", sep=",")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, include = F}
+minsup <- 0.025
+minconf <- 0.9
+
+rules1  <- apriori(trans1, parameter = list(support=minsup, confidence = minconf))
+r1 <- as(rules1, "data.frame")
+rules5  <- apriori(trans5, parameter = list(support=minsup, confidence = minconf))
+r5 <- as(rules5, "data.frame")
+rules20  <- apriori(trans20, parameter = list(support=minsup, confidence = minconf))
+r20 <- as(rules20, "data.frame")
+rules75 <- apriori(trans75, parameter = list(support=minsup, confidence = minconf))
+r75 <- as(rules75, "data.frame")
+```
+
+```{r include=F}
+f_1 <- apriori(trans1, parameter=list(support=minsup, confidence = minconf, target="frequent itemsets"))
+f_1_df <- as(f_1, "data.frame")
+
+f_5 <- apriori(trans5, parameter=list(support=minsup, confidence = minconf, target="frequent itemsets"))
+f_5_df <- as(f_5, "data.frame")
+
+f_20 <- apriori(trans20, parameter=list(support=minsup, confidence = minconf, target="frequent itemsets"))
+f_20_df <- as(f_20, "data.frame")
+
+f_75 <- apriori(trans75, parameter=list(support=minsup, confidence = minconf, target="frequent itemsets"))
+f_75_df <- as(f_75, "data.frame")
+```
+
+```{r include = F}
+frequent_display <- function(f_is) {
+  d <- data.frame("Itemset" = f_is$items, "Support" = f_is$support)
+  d <- d[with(d, order(-Support)), ]
+  return(d)
+}
+
+rule_display <- function(rule) {
+  antecedents = c()
+  consequents = c()
+  for (r in rule$rules) {
+    r <- strsplit(toString(r), " => ")
+    r <- as.list(r[[1]])
+    antecedents <- append(antecedents, r[[1]])
+    consequents <- append(consequents, r[[2]])
+  }
+  conf <- rule$confidence
+  sup <- rule$support
+  sup[] <- sapply(sup,round,3)
+  conf[] <- sapply(conf,round,3)
+  d <- data.frame("Antecedent" = antecedents, "Consequent" = consequents,
+                  "Support" = sup, "Confidence" = conf)
+  return(d)
+}
+```
+Frequent Items: 1k Data
+```{r echo = F, row.names = FALSE, render=lemon_print}
+frequent_display(f_1_df)
+```
+Frequent Items: 5k Data
+```{r echo = F, row.names = FALSE, render=lemon_print}
+frequent_display(f_5_df)
+```
+Frequent Items: 20k Data
+```{r echo = F, row.names = FALSE, render=lemon_print}
+frequent_display(f_20_df)
+```
+Frequent Items: 75k Data
+```{r echo = F, row.names = FALSE, render=lemon_print}
+frequent_display(f_75_df)
+```
+Rules: 1k Data
+```{r echo = F, row.names = FALSE, render=lemon_print}
+rule_display(r1)
+```
+Rules: 5k Data
+```{r echo = F, row.names = FALSE, render=lemon_print}
+rule_display(r5)
+```
+Rules: 20k Data
+```{r echo = F, row.names = FALSE, render=lemon_print}
+rule_display(r20)
+```
+
+Rules: 75k Data
+```{r echo = F, row.names = FALSE, render=lemon_print,}
+rule_display(r75)
+```
+
+### Part 2.1-C
+Trends in support and confidence are more pronounced in the largest dataset than in the three smaller datasets. Consider the plots below of the support and confidence for the 1k dataset and 75k dataset. Each plot shows support values between 0.015 and 0.7, and confidence values between 0.7 and 1. For the smaller dataset, the rules tend to be spread over a range of values, whereas for the larger dataset, the rules tend to be concentrated in a particular range. Specifically, if minsup is above about 0.022 and minconf is above about 0.9, the number of rules associated with the largest dataset will start to be consistently lower than the number of rules associated with smaller datasets, since these thresholds will begin to cut into the regions where the rules of the larger dataset are most concentrated. Therefore, differences in the number of rules per dataset size depends on the ranges of support and confidence that are being considered. This accounts for the significant reduction in number of rules produced by the 75k data in the example above, where the minimum support and minimum confidence are 0.025 and 0.9, respectively.
+
+```{r, include = F}
+minsup_alt <- 0.015
+minconf_alt <- 0.7
+
+rules1_alt  <- apriori(trans1, parameter = list(support=minsup_alt, confidence = minconf_alt))
+r1_alt <- as(rules1_alt, "data.frame")
+rules75_alt  <- apriori(trans75, parameter = list(support=minsup_alt, confidence = minconf_alt))
+r75_alt <- as(rules75_alt, "data.frame")
+```
+
+```{r, message = F, warnings = F, echo = F}
+plot(rules1_alt, xlim = c(0.015,0.04), ylim = c(0.7, 1), main = "1k Dataset")
+plot(rules75_alt, xlim = c(0.015,0.04), ylim = c(0.7, 1), main = "75k Dataset")
+```
+
+
+
+### Part 2.1-D-i
+```{r echo=FALSE}
+f_75_df_alt <- f_75_df
+f_75_df_alt <- f_75_df_alt[with(f_75_df_alt, order(-support)),]
+most_freq  <- toString(f_75_df_alt$items[1])
+least_freq <- toString(f_75_df_alt$items[nrow(f_75_df_alt)])
+```
+The most frequent itemset is: `r {most_freq}`
+```{r}
+```
+### Part 2.1-D-ii
+The least frequent itemset is: `r {least_freq}`

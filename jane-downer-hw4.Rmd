@@ -1,0 +1,344 @@
+---
+title: CS422 - HW2
+author: Jane Downer
+date: 9/28/2020
+output: html_document
+---
+
+
+### Part 2.1
+```{r}
+library(dplyr)
+library(magrittr)
+library(knitr)
+setwd("~/Desktop")
+df_hotel <- read.csv("hotel_bookings.csv", sep=",", header=T)
+
+df_hotel <- filter(df_hotel, !(adults == 0 & children == 0 & babies == 0))
+df_hotel <- filter(df_hotel, !(stays_in_week_nights == 0 & stays_in_weekend_nights== 0))
+df_hotel <- filter(df_hotel, adr <= 1000)
+df_hotel <- df_hotel[!apply(is.na(df_hotel) | df_hotel == "", 1, all),]
+
+
+```
+```{r}
+print(0)
+```
+
+### Part 2.1-A
+```{r}
+h1_count = sum(df_hotel$hotel == "Resort Hotel")
+cat("Number of 'H1' hotels: ", h1_count, "\n")
+
+h2_count = sum(df_hotel$hotel == "City Hotel")
+cat("Number of 'H2' hotels: ", h2_count, "\n")
+```
+
+
+### Part 2.1-B
+```{r}
+cancel_count = sum(df_hotel$is_canceled == 1)
+not_canceled_count = sum(df_hotel$is_canceled == 0)
+
+cat("Number of guests who canceled reservation: ", cancel_count, "\n")
+cat("Number of guests who did not cancel the resrvation: ", not_canceled_count, "\n")
+```
+
+
+### Part 2.1-C
+```{r}
+Contract_count = sum(df_hotel$customer_type == "Contract")
+Group_count = sum(df_hotel$customer_type == "Group")
+Transient_count = sum(df_hotel$customer_type == "Transient")
+type_list_count = c(Contract_count, Group_count, Transient_count)
+type_list = c("Contract", "Group", "Transient")
+most_common = which.max(type_list_count)
+cat(paste0("Customer type with the most reservations is ", type_list[most_common], ", with ", type_list_count[most_common], " reservations."))
+```
+
+### Part 2.1-D
+```{r}
+max_index = which.max(df_hotel$required_car_parking_spaces)
+max_parking = df_hotel$required_car_parking[max_index]
+count_max_parking = sum(df_hotel$required_car_parking_spaces == max_parking)
+cat(paste0(count_max_parking, " customers required the most number of parking spaces (", max_parking, ")."))
+```
+
+### Part 2.1-E
+```{r}
+min_index = which.min(df_hotel$required_car_parking_spaces)
+min_parking = df_hotel$required_car_parking[min_index]
+count_min_parking = sum(df_hotel$required_car_parking_spaces == min_parking)
+cat(paste0(count_min_parking, " customers required the least number of parking spaces (", min_parking, ")."))
+```
+
+### Part 2.1-F
+```{r}
+equal_df <- df_hotel[as.character(df_hotel$reserved_room_type)==as.character(df_hotel$assigned_room_type), ]
+percent_assigned = round(100*(nrow(equal_df)/nrow(df_hotel)), digits = 2)
+
+cat(paste0(percent_assigned, "% of the people who expressed a room preference during reservation got the room during check-in."))
+```
+
+### Part 2.1-G
+```{r}
+library(dplyr)
+
+# City Hotel data
+city_df <- filter(df_hotel, hotel == "City Hotel")
+country_cities <- sort(summary(as.factor(city_df$country)), decreasing = TRUE)[1:10] 
+
+# Resort Hotel data
+resort_df <- filter(df_hotel, hotel == "Resort Hotel")
+country_resorts <- sort(summary(as.factor(resort_df$country)), decreasing = TRUE)
+resort_names = union(names(country_resorts)[1:9], names(country_resorts)[11])
+resort_vals = union(as.vector(country_resorts)[1:9], as.vector(country_resorts)[11])
+
+# Bar charts
+library(RColorBrewer)
+coul <- brewer.pal(5, "Set2") 
+
+barplot(as.vector(country_cities),
+        main = "City Hotels: Top Ten Countries",
+        xlab = "Country", ylab = "Count",
+        names.arg = names(country_cities), cex.names=.7,
+        col=coul, border="white")
+
+barplot(resort_vals,
+        main = "Resort Hotels: Top Ten Countries",
+        xlab = "Country", ylab = "Count",
+        names.arg = resort_names, cex.names=.7,
+        col=coul, border="white")
+```
+
+```{r}
+#df_hotel[, "agent"] <- sapply(df_hotel[, "agent"], as.character)
+#df_hotel$agent[df_hotel$agent %in% c("NULL")] <- "no agent"
+
+yes_agent <- df_hotel$agent[df_hotel$agent %nin% c("no agent")]
+#agt <- sort(as.factor(df_hotel$agent, decreasing = TRUE))
+agents_sorted <- names(sort(table(yes_agent), decreasing = T))
+idx = length(agents_sorted)
+half_idx = floor((1/2)*idx)
+popular_agents <- agents_sorted[1:half_idx]
+unpopular_agents <- agents_sorted[half_idx:idx]
+df_hotel$agent[df_hotel$agent %in% popular_agents] <- "popular agent"
+df_hotel$agent[df_hotel$agent %in% unpopular_agents] <- "other"
+
+
+```
+
+### Part 2.1-H-i
+```{r}
+top_country = resort_names[1]
+cat(paste0("The code for the country with the most visitors is ", top_country, "."))
+```
+
+### Part 2.1-H-ii
+```{r}
+#cat("Based on this country code, and assuming the other frequent countries are nearby, I am guessing that #this data is from Portugal.")
+
+```
+
+```{r}
+
+```
+
+```{r}
+df_hotel <- filter(df_hotel, adr <= 1000)
+df_hotel <- filter(df_hotel, children <= 3)
+df_hotel <- filter(df_hotel, previous_bookings_not_canceled <= 10)
+df_hotel <- filter(df_hotel, adults <= 10)
+df_hotel <- filter(df_hotel, babies <= 2)
+df_hotel <- filter(df_hotel, previous_cancellations <= 5)
+df_hotel <- filter(df_hotel, booking_changes <= 5)
+df_hotel <- filter(df_hotel, days_in_waiting_list <= 100)
+df_hotel <- filter(df_hotel, booking_changes <= 5)
+
+df_hotel <- filter(df_hotel, meal != "Undefined")
+df_hotel <- filter(df_hotel, market_segment != "Undefined")
+df_hotel <- filter(df_hotel, deposit_type != "Refundable")
+df_hotel <- filter(df_hotel, customer_type != "Group")
+df_hotel <- filter(df_hotel, distribution_channel != "Undefined" & distribution_channel != "GDS")
+df_hotel <- filter(df_hotel, meal != "Undefined")
+```
+
+
+
+
+### Part 2.2-A-i
+```{r}
+# Modifying the dataset -- grouping variables into single columns
+library(rpart)
+library("data.table")
+library("caret")
+library(rpart.plot)
+library(ROCR)
+set.seed(1122)
+
+library(lattice)
+library(ggplot2)
+
+
+df_hotel[, "reservation_status_date"] <- sapply(df_hotel[, "reservation_status_date"], as.character)
+dayz <- as.Date(df_hotel$reservation_status_date, format = '%Y-%m-%d')
+df_hotel$reservation_status_date <- lubridate::yday(dayz)
+df_hotel$reservation_status_date
+
+df_hotel[, "arrival_date_month"] <- sapply(df_hotel[, "arrival_date_month"], as.character)
+df_hotel$arrival_date_month[df_hotel$arrival_date_month %in% c("March","April","May")] <- "spring"
+df_hotel$arrival_date_month[df_hotel$arrival_date_month %in% c("December","January","February")] <- "winter"
+df_hotel$arrival_date_month[df_hotel$arrival_date_month %in% c("June","July","August")] <- "summer"
+df_hotel$arrival_date_month[df_hotel$arrival_date_month %in% c("September","October","November")] <- "fall"
+df_hotel <- df_hotel %>% rename(season = arrival_date_month)
+
+df_hotel[, "country"] <- sapply(df_hotel[, "country"], as.character)
+df_hotel$country[df_hotel$country %in% c("GBR","IRL","USA")] <- "English-speaking"
+df_hotel$country[df_hotel$country %in% c("BRA","ESP")] <- "Spanish-speaking"
+df_hotel$country[df_hotel$country %in% c("PRT")] <- "PRT"
+df_hotel$country[df_hotel$country %in% c("BEL","FRA","ITA","NLD")] <- "Other Popular European"
+`%nin%` = Negate(`%in%`)
+df_hotel$country[df_hotel$country %nin% c("BEL","FRA","ITA","NLD","PRT","BRA","ESP","GBR","IRL","USA")] <- "Other"
+
+df_hotel[, "reserved_room_type"] <- sapply(df_hotel[, "reserved_room_type"], as.character)
+df_hotel[, "assigned_room_type"] <- sapply(df_hotel[, "assigned_room_type"], as.character)
+df_hotel[df_hotel$reserved_room_type == df_hotel$assigned_room_type,"received_room_pref"] <- "Yes"
+df_hotel[df_hotel$reserved_room_type != df_hotel$assigned_room_type,"received_room_pref"] <- "No"
+df_hotel$reserved_room_type <- NULL
+df_hotel$assigned_room_type <- NULL
+
+df_hotel[, "is_canceled"] <- sapply(df_hotel[, "is_canceled"], as.character)
+df_hotel$is_canceled[df_hotel$is_canceled %in% c(1)] <- "canceled"
+df_hotel$is_canceled[df_hotel$is_canceled %in% c(0)] <- "not canceled"
+
+df_hotel$nights_stayed <- rowSums(df_hotel[,c("stays_in_weekend_nights", "stays_in_week_nights")], na.rm=TRUE)
+df_hotel$stays_in_week_nights <- NULL
+df_hotel$stays_in_weekend_nights <- NULL
+
+
+
+```
+```{r}
+# Plotting the tree
+index <- sample(1:nrow(df_hotel), size=0.1*nrow(df_hotel))
+test <- df_hotel[index, ]
+train <- df_hotel[-index, ]
+
+mytree <- rpart(is_canceled ~ lead_time+
+                  nights_stayed+
+                  #arrival_date_week_number+
+                  #is_repeated_guest+
+                  country +
+                  customer_type+
+                  #previous_bookings_not_canceled+
+                  total_of_special_requests+
+                  booking_changes+
+                  previous_cancellations +
+                  deposit_type+
+                  days_in_waiting_list +
+                  reservation_status_date + 
+                  adr+
+                  meal+
+                  agent +
+                  #company + 
+                  received_room_pref+
+                  required_car_parking_spaces + 
+                  season + 
+                  #children + 
+                  #babies + 
+                  distribution_channel +
+                  hotel,
+                control=rpart.control(minsplit=50, maxdepth =12,cp =0.0001),
+                method = "class", data = df_hotel)
+
+
+rpart.plot(mytree, main = "Hotel Data",
+           type = 5, clip.right.labs=T, tweak = 1.2, extra = 106, fallen.leaves = T)
+
+```
+
+### Part 2.2-A-i
+```{r}
+agent_count = sum(df_hotel$customer_type == "Contract")
+Group_count = sum(df_hotel$customer_type == "Group")
+Transient_count = sum(df_hotel$customer_type == "Transient")
+type_list_count = c(Contract_count, Group_count, Transient_count)
+type_list = c("Contract", "Group", "Transient")
+most_common = which.max(type_list_count)
+cat(paste0("Customer type with the most reservations is ", type_list[most_common], ", with ", most_common))
+```
+
+### Part 2.2-A-ii
+```{r}
+var1 <- names(mytree$variable.importance)[1]
+var2 <- names(mytree$variable.importance)[2]
+var3 <- names(mytree$variable.importance)[3]
+var4 <- names(mytree$variable.importance)[4]
+var5 <- names(mytree$variable.importance)[5]
+
+score1 <- round(as.vector(mytree$variable.importance)[1], digits = 2)
+score2 <- round(as.vector(mytree$variable.importance)[2], digits = 2)
+score3 <- round(as.vector(mytree$variable.importance)[3], digits = 2)
+score4 <- round(as.vector(mytree$variable.importance)[4], digits = 2)
+score5 <- round(as.vector(mytree$variable.importance)[5], digits = 2)
+
+
+cat(paste0("\n\nThe five most important variables and their 'scores' (as defined by rpart's variable.imporance function):\n\n"))
+cat(paste0("1. ", var1, ", ", score1, "\n"))
+cat(paste0("2. ", var2, ", ", score2, "\n"))
+cat(paste0("3. ", var3, ", ", score3, "\n"))
+cat(paste0("4. ", var4, ", ", score4, "\n"))
+cat(paste0("5. ", var5, ", ", score5, "\n"))
+
+```
+```{r}
+
+```
+
+```{r}
+pred <- predict(mytree, test, type="class")
+pred.prob <- predict(mytree, test, type="prob")
+
+conmat<- confusionMatrix(pred, as.factor(test$is_canceled))
+conmat
+mytree$variable.importance
+
+```
+
+
+### Part 2.2-A-iii
+```{r}
+pred <- predict(mytree, test, type="class")
+pred.prob <- predict(mytree, test, type="prob")
+conmat<- confusionMatrix(pred, as.factor(test$is_canceled))
+
+acc <- round(conmat$overall[1], digits=4)
+bal_acc <- round(conmat$byClass[11], digits=4)
+spec <- round(conmat$byClass[2], digits=4)
+sens <- round(conmat$byClass[1], digits=4)
+prec <- round(conmat$byClass[5], digits=4)
+
+cat(paste0("\nAccuracy: ", acc))
+cat(paste0("\nError: ", 1-acc))
+cat(paste0("\nBalanced Accuracy: ", bal_acc))
+cat(paste0("\nSpecificity: ", spec))
+cat(paste0("\nSensitivity: ", sens))
+cat(paste0("\nPrecision: ", prec))
+cat(paste0("\n"))
+```
+
+### Part 2.2-A-iv
+```{r}
+# Calculate AUC and plot ROC
+rocr <- predict(mytree, newdata=test, type="prob")[,2]
+f.pred <- prediction(rocr, test$is_canceled)
+plot(performance(f.pred, "tpr", "fpr"), colorize=T, lwd=3)
+abline(0,1)
+```
+### Part 2.2-A-v
+```{r}
+#Print AUC
+auc.pruned <- performance(f.pred, measure = "auc")
+cat(paste0("The area under curve (AUC) for the full tree is ", 
+         round(auc.pruned@y.values[[1]], 3)))
+```
